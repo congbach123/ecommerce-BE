@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
+import { MailService } from '../mail/mail.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -19,9 +20,12 @@ export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+    private readonly mailService: MailService,
   ) {}
 
-  async register(registerDto: RegisterDto): Promise<{ user: Partial<User>; access_token: string }> {
+  async register(
+    registerDto: RegisterDto,
+  ): Promise<{ user: Partial<User>; access_token: string }> {
     const { email, password, first_name, last_name, phone } = registerDto;
 
     // Check if user already exists
@@ -51,7 +55,9 @@ export class AuthService {
     return { user: userWithoutPassword, access_token };
   }
 
-  async login(loginDto: LoginDto): Promise<{ user: Partial<User>; access_token: string }> {
+  async login(
+    loginDto: LoginDto,
+  ): Promise<{ user: Partial<User>; access_token: string }> {
     const { email, password } = loginDto;
 
     // Find user by email
@@ -61,7 +67,10 @@ export class AuthService {
     }
 
     // Validate password
-    const isPasswordValid = await this.validatePassword(password, user.password);
+    const isPasswordValid = await this.validatePassword(
+      password,
+      user.password,
+    );
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -96,29 +105,46 @@ export class AuthService {
     return userWithoutPassword;
   }
 
-  async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<{ message: string; reset_token?: string }> {
+  async forgotPassword(
+    forgotPasswordDto: ForgotPasswordDto,
+  ): Promise<{ message: string }> {
     const { email } = forgotPasswordDto;
 
     const user = await this.usersService.findByEmail(email);
     if (!user) {
       // Don't reveal if user exists for security reasons
+      // But return success message anyway
       return {
-        message: 'If an account with that email exists, a password reset link has been sent'
+        message:
+          'If an account with that email exists, a password reset link has been sent',
       };
     }
 
     // Generate password reset token (valid for 1 hour)
     const reset_token = this.generatePasswordResetToken(user);
 
-    // TODO: In production, send this token via email instead of returning it
-    // For development, we'll return it in the response
+    // Send password reset email
+    try {
+      await this.mailService.sendPasswordResetEmail(
+        user.email,
+        user.first_name,
+        reset_token,
+      );
+    } catch (error) {
+      console.error('Failed to send password reset email:', error);
+      // Don't throw error - return success message for security
+      // This prevents attackers from knowing if email exists
+    }
+
     return {
-      message: 'Password reset token generated',
-      reset_token, // Remove this in production
+      message:
+        'If an account with that email exists, a password reset link has been sent',
     };
   }
 
-  async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<{ message: string }> {
+  async resetPassword(
+    resetPasswordDto: ResetPasswordDto,
+  ): Promise<{ message: string }> {
     const { token, new_password } = resetPasswordDto;
 
     try {
@@ -179,7 +205,10 @@ export class AuthService {
     return bcrypt.hash(password, saltRounds);
   }
 
-  private async validatePassword(password: string, hashedPassword: string): Promise<boolean> {
+  private async validatePassword(
+    password: string,
+    hashedPassword: string,
+  ): Promise<boolean> {
     return bcrypt.compare(password, hashedPassword);
   }
 }
