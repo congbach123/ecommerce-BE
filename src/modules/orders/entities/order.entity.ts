@@ -82,7 +82,7 @@ export class Order {
   currency: string;
 
   @Column({ type: 'text', nullable: true })
-  notes: string;
+  notes: string | null;
 
   @Index('idx_created')
   @CreateDateColumn()

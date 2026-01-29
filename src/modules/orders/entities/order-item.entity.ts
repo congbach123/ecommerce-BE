@@ -30,7 +30,7 @@ export class OrderItem {
   product_name: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  product_sku: string;
+  product_sku: string | null;
 
   @Column({ type: 'int' })
   quantity: number;

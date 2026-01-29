@@ -21,11 +21,11 @@ export class Cart {
 
   @Index('idx_user')
   @Column({ type: 'varchar', length: 36, nullable: true })
-  user_id: string;
+  user_id: string | null;
 
   @Index('idx_session')
   @Column({ type: 'varchar', length: 255, nullable: true })
-  session_id: string;
+  session_id: string | null;
 
   @CreateDateColumn()
   created_at: Date;

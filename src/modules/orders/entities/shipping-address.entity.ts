@@ -30,22 +30,22 @@ export class ShippingAddress {
   email: string;
 
   @Column({ type: 'varchar', length: 20, nullable: true })
-  phone: string;
+  phone: string | null;
 
   @Column({ type: 'varchar', length: 255 })
   address_line1: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  address_line2: string;
+  address_line2: string | null;
 
   @Column({ type: 'varchar', length: 100 })
   city: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  state: string;
+  state: string | null;
 
   @Column({ type: 'varchar', length: 20, nullable: true })
-  postal_code: string;
+  postal_code: string | null;
 
   @Column({ type: 'varchar', length: 100 })
   country: string;
