@@ -6,7 +6,9 @@ import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    rawBody: true, // Required for Stripe webhook signature verification
+  });
   const configService = app.get(ConfigService);
 
   // Cookie parser needed for auth tokens
